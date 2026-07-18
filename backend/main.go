@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	mapWidth  = 80
-	mapHeight = 60
+	mapWidth  = 160
+	mapHeight = 120
 
 	// Scale controls the "zoom" level of the noise.
 	// Smaller values = zoomed in (larger islands, smoother transitions)
 	// Larger values = zoomed out (chaotic, noisy terrain)
-	scale = 0.08
+	scale = 0.04
 )
 
 func main() {
