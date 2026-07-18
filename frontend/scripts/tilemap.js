@@ -1,15 +1,22 @@
 let mapData = null;
 let zoomLevel = 1.0;
+let panX = 0;
+let panY = 0;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 15.0;
 const ZOOM_SPEED = 0.005; // For scroll wheel
+const PAN_SPEED = 20; // For arrow keys
 
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
+function updateTransform() {
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+}
+
 function updateZoom(newZoom) {
     zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-    canvas.style.transform = `scale(${zoomLevel})`;
+    updateTransform();
 }
 
 document.getElementById('zoomInBtn').addEventListener('click', () => {
@@ -27,6 +34,61 @@ window.addEventListener('wheel', (e) => {
     const zoomMultiplier = Math.exp(-e.deltaY * ZOOM_SPEED);
     updateZoom(zoomLevel * zoomMultiplier);
 }, { passive: false });
+
+// Dragging logic
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+window.addEventListener('mousedown', (e) => {
+    // Only drag with left click, and don't interfere with buttons
+    if (e.button !== 0 || e.target.tagName.toLowerCase() === 'button') return;
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    
+    panX += dx;
+    panY += dy;
+    updateTransform();
+});
+
+window.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+window.addEventListener('mouseleave', () => {
+    isDragging = false; // Stop dragging if mouse leaves the window
+});
+
+// Arrow key logic
+window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+        case 'ArrowUp':
+            panY += PAN_SPEED;
+            updateTransform();
+            break;
+        case 'ArrowDown':
+            panY -= PAN_SPEED;
+            updateTransform();
+            break;
+        case 'ArrowLeft':
+            panX += PAN_SPEED;
+            updateTransform();
+            break;
+        case 'ArrowRight':
+            panX -= PAN_SPEED;
+            updateTransform();
+            break;
+    }
+});
 
 // Linear interpolation
 function lerp(start, end, t) {
