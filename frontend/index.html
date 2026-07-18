@@ -83,7 +83,19 @@
                 return `rgb(${lerp(0, 180, t)}, ${lerp(100, 130, t)}, ${lerp(0, 80, t)})`;
             } else {
                 // High elevation: > 0.75
-                return `rgb(${lerp(100, 255, (v - 0.75) * 4)}, ${lerp(100, 255, (v - 0.75) * 4)}, ${lerp(100, 255, (v - 0.75) * 4)})`;
+                // Normalize t from 0 to 1 for the range 0.75 to 1.0
+                let t = (v - 0.75) / 0.25;
+
+                // Calculate the exact color at v = 0.75 from the previous block to ensure a seamless match
+                let t_prev = (0.75 - 0.05) / 0.75;
+                let startR = lerp(0, 180, t_prev);
+                let startG = lerp(100, 130, t_prev);
+                let startB = lerp(0, 80, t_prev);
+
+                // Target a neutral gray
+                let endGray = 180;
+
+                return `rgb(${lerp(startR, endGray, t)}, ${lerp(startG, endGray, t)}, ${lerp(startB, endGray, t)})`;
             }
         }
 
