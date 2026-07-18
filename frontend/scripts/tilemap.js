@@ -1,3 +1,5 @@
+import { getColor, getTileTypeName } from "./tile-type.js";
+
 let mapData = null;
 let zoomLevel = 1.0;
 let panX = 0;
@@ -54,7 +56,7 @@ window.addEventListener('mousemove', (e) => {
     const dy = e.clientY - lastMouseY;
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
-    
+
     panX += dx;
     panY += dy;
     updateTransform();
@@ -89,54 +91,6 @@ window.addEventListener('keydown', (e) => {
             break;
     }
 });
-
-// Linear interpolation
-function lerp(start, end, t) {
-    return Math.floor(start + (end - start) * t);
-}
-
-// Color mapping function based on noise value
-function getColor(v) {
-    // Clamp v to [-1, 1] just in case
-    v = Math.max(-1, Math.min(1, v));
-
-    if (v < -0.3) {
-        // Deep water: -1.0 to -0.3
-        let t = (v + 1.0) / 0.7;
-        t = Math.max(0, t);
-        return `rgb(0, ${lerp(0, 100, t)}, ${lerp(100, 255, t)})`;
-    } else if (v < 0) {
-        // Shallow water: -0.3 to 0
-        let t = (v + 0.3) / 0.3;
-        return `rgb(${lerp(0, 150, t)}, ${lerp(100, 200, t)}, 255)`;
-    } else if (v < 0.05) {
-        // Beach: 0 to 0.05
-        return `rgb(240, 230, 150)`;
-    } else if (v < 0.65) {
-        // Vegetation: 0.05 to 0.65
-        let t = (v - 0.05) / 0.75;
-        return `rgb(${lerp(0, 180, t)}, ${lerp(100, 130, t)}, ${lerp(0, 80, t)})`;
-    } else if (v < 0.75) {
-        // Light brown: 0.65 to 0.75
-        let t = (v - 0.05) / 0.75;
-        return `rgb(${lerp(0, 180, t)}, ${lerp(100, 130, t)}, ${lerp(0, 80, t)})`;
-    } else {
-        // High elevation: > 0.75
-        // Normalize t from 0 to 1 for the range 0.75 to 1.0
-        let t = (v - 0.75) / 0.25;
-
-        // Calculate the exact color at v = 0.75 from the previous block to ensure a seamless match
-        let t_prev = (0.75 - 0.05) / 0.75;
-        let startR = lerp(0, 180, t_prev);
-        let startG = lerp(100, 130, t_prev);
-        let startB = lerp(0, 80, t_prev);
-
-        // Target a neutral gray
-        let endGray = 180;
-
-        return `rgb(${lerp(startR, endGray, t)}, ${lerp(startG, endGray, t)}, ${lerp(startB, endGray, t)})`;
-    }
-}
 
 function renderMap() {
     if (!mapData || mapData.length === 0) return;
@@ -177,3 +131,38 @@ async function fetchAndRenderMap() {
 
 // Run on load
 fetchAndRenderMap();
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!mapData) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    // Scale down from on-screen pixels to actual canvas dimensions
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    const tileSize = 20;
+    const tileX = Math.floor(x / tileSize);
+    const tileY = Math.floor(y / tileSize);
+
+    if (tileY >= 0 && tileY < mapData.length && tileX >= 0 && tileX < mapData[0].length) {
+        const val = mapData[tileY][tileX];
+        const typeName = getTileTypeName(val);
+
+        const typeElem = document.getElementById('infoTileType');
+        const valElem = document.getElementById('infoTileValue');
+
+        if (typeElem) typeElem.innerText = typeName;
+        if (valElem) valElem.innerText = `Noise Value: ${val.toFixed(4)}\nCoordinates: (${tileX}, ${tileY})`;
+    }
+});
+
+canvas.addEventListener('mouseleave', () => {
+    const typeElem = document.getElementById('infoTileType');
+    const valElem = document.getElementById('infoTileValue');
+    if (typeElem) typeElem.innerText = 'Hover over a tile';
+    if (valElem) valElem.innerText = '';
+});
