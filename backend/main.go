@@ -11,32 +11,14 @@ import (
 )
 
 const (
-	mapWidth  = 60
-	mapHeight = 20
+	mapWidth  = 80
+	mapHeight = 60
 
 	// Scale controls the "zoom" level of the noise.
 	// Smaller values = zoomed in (larger islands, smoother transitions)
 	// Larger values = zoomed out (chaotic, noisy terrain)
 	scale = 0.08
 )
-
-// getTile maps a continuous noise value (roughly -1.0 to 1.0) to a discrete tile.
-func getTile(noiseValue float64) string {
-	switch {
-	case noiseValue < -0.3:
-		return "#" // Deep Water
-	case noiseValue < -0.1:
-		return "*" // Shallow Water
-	case noiseValue < 0.05:
-		return "=" // Sand (Beach)
-	case noiseValue < 0.4:
-		return "-" // Grass
-	case noiseValue < 0.65:
-		return ":" // Forest
-	default:
-		return "." // Mountain / Snow
-	}
-}
 
 func main() {
 	// Initialize the noise generator with a random seed based on current time
@@ -45,12 +27,12 @@ func main() {
 
 	fmt.Println("Generating Procedural Tile Map...")
 
-	tileMap := make([][]string, mapHeight)
-	
+	tileMap := make([][]float64, mapHeight)
+
 	// Loop through the grid
-	for y := 0; y < mapHeight; y++ {
-		tileMap[y] = make([]string, mapWidth)
-		for x := 0; x < mapWidth; x++ {
+	for y := range tileMap {
+		tileMap[y] = make([]float64, mapWidth)
+		for x := range tileMap[y] {
 			// Multiply coordinates by the scale factor
 			nx := float64(x) * scale
 			ny := float64(y) * scale
@@ -58,9 +40,7 @@ func main() {
 			// Get the noise value at this coordinate.
 			// Eval2 returns a value roughly between -1.0 and 1.0
 			val := noise.Eval2(nx, ny)
-
-			// Convert the raw noise value to a visual tile
-			tileMap[y][x] = getTile(val)
+			tileMap[y][x] = val
 		}
 	}
 
@@ -69,7 +49,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		
+
 		err := json.NewEncoder(w).Encode(tileMap)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

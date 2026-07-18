@@ -1,0 +1,15 @@
+#mapContainer {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+canvas {
+    background-color: #000;
+    image-rendering: pixelated;
+    transform-origin: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
