@@ -1,4 +1,4 @@
-import { clearInfoPanelTile, setInfoPanelTile } from "./info-panel.js";
+import { clearInfoPanelTile, setInfoPanelTile, updateInfoPanel } from "./info-panel.js";
 import { getColor } from "./tile-type.js";
 
 let mapData = null;
@@ -22,7 +22,7 @@ function updateTransform() {
 function zoomTowards(newZoom, clientX, clientY) {
     const oldZoom = zoomLevel;
     newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-    
+
     if (newZoom !== oldZoom) {
         const rect = canvas.getBoundingClientRect();
         const offsetX = clientX - rect.left;
@@ -30,7 +30,7 @@ function zoomTowards(newZoom, clientX, clientY) {
 
         panX = panX + offsetX * (1 - newZoom / oldZoom);
         panY = panY + offsetY * (1 - newZoom / oldZoom);
-        
+
         zoomLevel = newZoom;
         updateTransform();
     }
@@ -127,25 +127,31 @@ function renderMap() {
     }
 }
 
-async function fetchAndRenderMap() {
-    try {
-        const response = await fetch('http://localhost:8080/');
-        mapData = await response.json();
+function connectWebSocket() {
+    const ws = new WebSocket('ws://localhost:8080/ws');
+
+    ws.onopen = () => {
+        console.log("Connected to WebSocket");
+    };
+
+    ws.onmessage = (event) => {
+        mapData = JSON.parse(event.data);
         renderMap();
-    } catch (error) {
-        console.error("Failed to fetch map:", error);
-        canvas.width = 400;
-        canvas.height = 200;
-        ctx.fillStyle = 'red';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Failed to load map. Is the Go backend running?', 200, 100);
-    }
+        updateInfoPanel();
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket connection closed. Reconnecting in 1s...");
+        setTimeout(connectWebSocket, 1000);
+    };
 }
 
 // Run on load
-fetchAndRenderMap();
+connectWebSocket();
 
 canvas.addEventListener('mousemove', (e) => {
     if (!mapData) return;
@@ -163,8 +169,8 @@ canvas.addEventListener('mousemove', (e) => {
     const tileX = Math.floor(x / tileSize);
     const tileY = Math.floor(y / tileSize);
 
-    if (tileY >= 0 && tileY < mapData.length && tileX >= 0 && tileX < mapData[0].length) {
-        const val = mapData[tileY][tileX];
+    let val = getTileValue(tileX, tileY);
+    if (val !== null) {
         setInfoPanelTile(tileX, tileY, val);
     }
 });
@@ -172,3 +178,13 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseleave', () => {
     clearInfoPanelTile();
 });
+
+function getTileValue(tileX, tileY) {
+    if (tileY >= 0 && tileY < mapData.length && tileX >= 0 && tileX < mapData[0].length) {
+        return mapData[tileY][tileX];
+    }
+
+    return null;
+}
+
+export { getTileValue }

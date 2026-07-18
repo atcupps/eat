@@ -1,6 +1,10 @@
 import { getTileTypeName, getColor } from "./tile-type.js";
+import { getTileValue } from "./tilemap.js";
 
 let infoOpen = false;
+let tileX = 0;
+let tileY = 0;
+let tileValue = 0.0;
 
 const toggleBtnContainer = document.querySelector('.left-controls');
 const toggleBtn = document.getElementById('infoToggleBtn');
@@ -19,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setInfoPanelTile(x, y, val) {
+    tileX = x;
+    tileY = y;
+    tileValue = val;
+
     const typeName = getTileTypeName(val);
 
     if (typeElem) typeElem.innerText = typeName;
@@ -35,4 +43,12 @@ function clearInfoPanelTile() {
     if (tileDisplay) tileDisplay.style.display = 'none';
 }
 
-export { setInfoPanelTile, clearInfoPanelTile }
+function updateInfoPanel() {
+    let val = getTileValue(tileX, tileY);
+
+    if (val !== null) {
+        setInfoPanelTile(tileX, tileY, val);
+    }
+}
+
+export { setInfoPanelTile, clearInfoPanelTile, updateInfoPanel }

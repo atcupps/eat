@@ -1,14 +1,23 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/ojrac/opensimplex-go"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for dev
+	},
+}
+
+var tileMapMutex sync.RWMutex
 
 const (
 	mapWidth  = 190
@@ -46,13 +55,38 @@ func main() {
 
 	fmt.Println("Map generated! Starting web server on :8080...")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+	go func() {
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		for range ticker.C {
+			tileMapMutex.Lock()
+			tileMap[0][0] += 0.01
+			if tileMap[0][0] > 1.0 {
+				tileMap[0][0] -= 2.0
+			}
+			tileMapMutex.Unlock()
+		}
+	}()
 
-		err := json.NewEncoder(w).Encode(tileMap)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println("upgrade error:", err)
+			return
+		}
+		defer conn.Close()
+
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			tileMapMutex.RLock()
+			err := conn.WriteJSON(tileMap)
+			tileMapMutex.RUnlock()
+			if err != nil {
+				log.Println("write error:", err)
+				break
+			}
 		}
 	})
 
