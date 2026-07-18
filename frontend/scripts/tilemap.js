@@ -13,21 +13,35 @@ const PAN_SPEED = 20; // For arrow keys
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
+canvas.style.transformOrigin = '0 0';
+
 function updateTransform() {
     canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
 }
 
-function updateZoom(newZoom) {
-    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-    updateTransform();
+function zoomTowards(newZoom, clientX, clientY) {
+    const oldZoom = zoomLevel;
+    newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    
+    if (newZoom !== oldZoom) {
+        const rect = canvas.getBoundingClientRect();
+        const offsetX = clientX - rect.left;
+        const offsetY = clientY - rect.top;
+
+        panX = panX + offsetX * (1 - newZoom / oldZoom);
+        panY = panY + offsetY * (1 - newZoom / oldZoom);
+        
+        zoomLevel = newZoom;
+        updateTransform();
+    }
 }
 
 document.getElementById('zoomInBtn').addEventListener('click', () => {
-    updateZoom(zoomLevel * 1.3);
+    zoomTowards(zoomLevel * 1.3, window.innerWidth / 2, window.innerHeight / 2);
 });
 
 document.getElementById('zoomOutBtn').addEventListener('click', () => {
-    updateZoom(zoomLevel / 1.3);
+    zoomTowards(zoomLevel / 1.3, window.innerWidth / 2, window.innerHeight / 2);
 });
 
 window.addEventListener('wheel', (e) => {
@@ -35,7 +49,7 @@ window.addEventListener('wheel', (e) => {
     e.preventDefault();
     // e.deltaY is positive when scrolling down (zoom out), negative when up (zoom in)
     const zoomMultiplier = Math.exp(-e.deltaY * ZOOM_SPEED);
-    updateZoom(zoomLevel * zoomMultiplier);
+    zoomTowards(zoomLevel * zoomMultiplier, e.clientX, e.clientY);
 }, { passive: false });
 
 // Dragging logic

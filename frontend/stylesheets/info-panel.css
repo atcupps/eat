@@ -52,3 +52,9 @@
     line-height: 1.5;
     color: #ccc;
 }
+
+.infoPanelText {
+    color: #ccc;
+    font-family: monospace;
+    font-size: 14px;
+}

@@ -12,7 +12,7 @@ import (
 
 const (
 	mapWidth  = 190
-	mapHeight = 110
+	mapHeight = 120
 
 	// Scale controls the "zoom" level of the noise.
 	// Smaller values = zoomed in (larger islands, smoother transitions)
