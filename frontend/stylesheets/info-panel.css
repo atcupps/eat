@@ -29,6 +29,13 @@
     font-family: sans-serif;
 }
 
+#infoTileDisplay {
+    display: none;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+}
+
 .info-panel.open {
     transform: translateX(0);
 }

@@ -1,4 +1,5 @@
-import { getColor, getTileTypeName } from "./tile-type.js";
+import { clearInfoPanelTile, setInfoPanelTile } from "./info-panel.js";
+import { getColor } from "./tile-type.js";
 
 let mapData = null;
 let zoomLevel = 1.0;
@@ -150,19 +151,10 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (tileY >= 0 && tileY < mapData.length && tileX >= 0 && tileX < mapData[0].length) {
         const val = mapData[tileY][tileX];
-        const typeName = getTileTypeName(val);
-
-        const typeElem = document.getElementById('infoTileType');
-        const valElem = document.getElementById('infoTileValue');
-
-        if (typeElem) typeElem.innerText = typeName;
-        if (valElem) valElem.innerText = `Noise Value: ${val.toFixed(4)}\nCoordinates: (${tileX}, ${tileY})`;
+        setInfoPanelTile(tileX, tileY, val);
     }
 });
 
 canvas.addEventListener('mouseleave', () => {
-    const typeElem = document.getElementById('infoTileType');
-    const valElem = document.getElementById('infoTileValue');
-    if (typeElem) typeElem.innerText = 'Hover over a tile';
-    if (valElem) valElem.innerText = '';
+    clearInfoPanelTile();
 });
