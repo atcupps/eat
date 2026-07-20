@@ -1,7 +1,8 @@
 import { clearInfoPanelTile, setInfoPanelTile, updateInfoPanel } from "./info-panel.js";
 import { getColor } from "./tile-type.js";
 
-let mapData = null;
+let elevation = null;
+let nutrition = null;
 let zoomLevel = 1.0;
 let panX = 0;
 let panY = 0;
@@ -108,10 +109,10 @@ window.addEventListener('keydown', (e) => {
 });
 
 function renderMap() {
-    if (!mapData || mapData.length === 0) return;
+    if (!elevation || elevation.length === 0) return;
 
-    const rows = mapData.length;
-    const cols = mapData[0].length;
+    const rows = elevation.length;
+    const cols = elevation[0].length;
 
     const tileSize = 20;
 
@@ -120,11 +121,19 @@ function renderMap() {
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            const val = mapData[y][x];
+            const val = elevation[y][x];
             ctx.fillStyle = getColor(val);
             ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
         }
     }
+}
+
+async function connectInit() {
+    const init = await fetch("http://localhost:8080/init");
+    const data = JSON.parse(await init.text());
+    elevation = data.elevation;
+    nutrition = data.nutrition;
+    renderMap();
 }
 
 function connectWebSocket() {
@@ -135,7 +144,8 @@ function connectWebSocket() {
     };
 
     ws.onmessage = (event) => {
-        mapData = JSON.parse(event.data);
+        const data = JSON.parse(event.data);
+        nutrition = data.nutrition;
         renderMap();
         updateInfoPanel();
     };
@@ -150,11 +160,11 @@ function connectWebSocket() {
     };
 }
 
-// Run on load
+connectInit();
 connectWebSocket();
 
 canvas.addEventListener('mousemove', (e) => {
-    if (!mapData) return;
+    if (!elevation) return;
 
     const rect = canvas.getBoundingClientRect();
 
@@ -180,8 +190,8 @@ canvas.addEventListener('mouseleave', () => {
 });
 
 function getTileValue(tileX, tileY) {
-    if (tileY >= 0 && tileY < mapData.length && tileX >= 0 && tileX < mapData[0].length) {
-        return mapData[tileY][tileX];
+    if (tileY >= 0 && tileY < elevation.length && tileX >= 0 && tileX < elevation[0].length) {
+        return elevation[tileY][tileX];
     }
 
     return null;

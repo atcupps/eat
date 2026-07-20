@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -8,17 +9,22 @@ import (
 
 func ServeInitConnections() {
 	http.HandleFunc("/init", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Println("upgrade error:", err)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
 			return
 		}
-		defer conn.Close()
+
+		w.Header().Set("Content-Type", "application/json")
 
 		State.Tiles.Lock.RLock()
-		err = conn.WriteJSON(State.InitMessage())
+		msg := State.InitMessage()
 		State.Tiles.Lock.RUnlock()
-		if err != nil {
+
+		if err := json.NewEncoder(w).Encode(msg); err != nil {
 			log.Println("write error:", err)
 		}
 	})
@@ -26,6 +32,15 @@ func ServeInitConnections() {
 
 func StreamSim(stop <-chan bool) {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("upgrade error:", err)

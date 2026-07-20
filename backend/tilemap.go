@@ -115,9 +115,6 @@ func (tm *TileMap) GetTileType(x, y int) (TileType, error) {
 
 func (tm *TileMap) InitMessage() InitMessage {
 	return InitMessage{
-		Width:     MAP_WIDTH,
-		Height:    MAP_HEIGHT,
-		Scale:     MAP_SCALE,
 		Elevation: tm.elevation,
 		Nutrition: tm.nutrition,
 	}
