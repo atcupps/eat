@@ -1,0 +1,124 @@
+package main
+
+import (
+	"fmt"
+	"sync"
+
+	"github.com/ojrac/opensimplex-go"
+)
+
+const (
+	MAP_WIDTH  int     = 192
+	MAP_HEIGHT int     = 128
+	MAP_SCALE  float64 = 0.04 // smaller = zoomed in, larger = zoomed out
+
+	MIN_ELEVATION float64 = -1.0
+	MAX_ELEVATION float64 = 1.0
+
+	DEEP_WATER_THRESHOLD    float64 = -0.3
+	SHALLOW_WATER_THRESHOLD float64 = 0
+	BEACH_THRESHOLD                 = 0.05
+	VEGETATION_THRESHOLD            = 0.65
+	HILLS_THRESHOLD                 = 0.75
+
+	MIN_NUTRITION float64 = 0.0
+	MAX_NUTRITION float64 = VEGETATION_THRESHOLD - BEACH_THRESHOLD
+)
+
+type TileType int
+
+const (
+	TileTypeDeepWater TileType = iota
+	TileTypeShallowWater
+	TileTypeBeach
+	TileTypeVegetation
+	TileTypeHills
+	TileTypeMountain
+)
+
+func tileTypeFromElevation(elevation float64) TileType {
+	if elevation < DEEP_WATER_THRESHOLD {
+		return TileTypeDeepWater
+	} else if elevation < SHALLOW_WATER_THRESHOLD {
+		return TileTypeShallowWater
+	} else if elevation < BEACH_THRESHOLD {
+		return TileTypeBeach
+	} else if elevation < VEGETATION_THRESHOLD {
+		return TileTypeVegetation
+	} else if elevation < HILLS_THRESHOLD {
+		return TileTypeHills
+	} else {
+		return TileTypeMountain
+	}
+}
+
+type TileMap struct {
+	elevation [][]float64
+	nutrition [][]float64
+	Lock      sync.RWMutex
+}
+
+func NewTileMap(seed int64) TileMap {
+	noise := opensimplex.New(seed)
+	elevation := make([][]float64, MAP_HEIGHT)
+	for y := range elevation {
+		elevation[y] = make([]float64, MAP_WIDTH)
+		for x := range elevation[y] {
+			elevation[y][x] = noise.Eval2(float64(x)*MAP_SCALE, float64(y)*MAP_SCALE)
+		}
+	}
+
+	nutrition := make([][]float64, MAP_HEIGHT)
+	for y := range nutrition {
+		nutrition[y] = make([]float64, MAP_WIDTH)
+		for x := range nutrition[y] {
+			if tileTypeFromElevation(elevation[y][x]) == TileTypeVegetation {
+				nutrition[y][x] = MAX_NUTRITION - elevation[y][x] + BEACH_THRESHOLD
+			} else {
+				nutrition[y][x] = MIN_NUTRITION
+			}
+		}
+	}
+
+	return TileMap{
+		elevation: elevation,
+		nutrition: nutrition,
+		Lock:      sync.RWMutex{},
+	}
+}
+
+func (tm *TileMap) GetElevation(x, y int) (float64, error) {
+	if x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT {
+		return 0, fmt.Errorf("tile at (%d, %d) is out of bounds", x, y)
+	}
+	tm.Lock.RLock()
+	defer tm.Lock.RUnlock()
+	return tm.elevation[y][x], nil
+}
+
+func (tm *TileMap) GetNutrition(x, y int) (float64, error) {
+	if x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT {
+		return 0, fmt.Errorf("tile at (%d, %d) is out of bounds", x, y)
+	}
+	tm.Lock.RLock()
+	defer tm.Lock.RUnlock()
+	return tm.nutrition[y][x], nil
+}
+
+func (tm *TileMap) GetTileType(x, y int) (TileType, error) {
+	elevation, err := tm.GetElevation(x, y)
+	if err != nil {
+		return TileTypeDeepWater, err
+	}
+	return tileTypeFromElevation(elevation), nil
+}
+
+func (tm *TileMap) InitMessage() InitMessage {
+	return InitMessage{
+		Width:     MAP_WIDTH,
+		Height:    MAP_HEIGHT,
+		Scale:     MAP_SCALE,
+		Elevation: tm.elevation,
+		Nutrition: tm.nutrition,
+	}
+}
