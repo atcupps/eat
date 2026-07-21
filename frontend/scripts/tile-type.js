@@ -2,6 +2,8 @@ const DEEP_WATER_THRESHOLD = -0.3;
 const SHALLOW_WATER_THRESHOLD = 0;
 const BEACH_THRESHOLD = 0.05;
 const VEGETATION_THRESHOLD = 0.65;
+const MIN_NUTRITION = 0.0;
+const MAX_NUTRITION = VEGETATION_THRESHOLD - BEACH_THRESHOLD;
 const HILLS_THRESHOLD = 0.75;
 const MIN_NOISE_VALUE = -1.0;
 const MAX_NOISE_VALUE = 1.0;
@@ -11,8 +13,30 @@ function lerp(start, end, t) {
     return Math.floor(start + (end - start) * t);
 }
 
-// Color mapping function based on noise value
-function getColor(v) {
+function effectiveValue(elevation, nutrition) {
+    if (BEACH_THRESHOLD < elevation && elevation < VEGETATION_THRESHOLD) {
+        /**
+         * nutrition is from veg_thresh to beach_thresh
+         * it doesn't go higher than elevation
+         * 
+         * nutrition := max_nutr - elev + beach
+         * 
+         * if the nutrition is undisturbed, then the effective
+         * value should be the same as elevation
+         * so to get back to elevation we go:
+         * elev = max_nutr - nutr + beach
+         * 
+         * if nutrition goes down from its default value,
+         * then elev will increase as expected
+         */
+        return MAX_NUTRITION - nutrition + BEACH_THRESHOLD;
+    }
+    return elevation;
+}
+
+// Color mapping function based on elevation and nutrition value
+function getColor(elevation, nutrition) {
+    let v = effectiveValue(elevation, nutrition);
     v = Math.max(MIN_NOISE_VALUE, Math.min(MAX_NOISE_VALUE, v));
 
     if (v < DEEP_WATER_THRESHOLD) {

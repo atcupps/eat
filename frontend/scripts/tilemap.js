@@ -121,8 +121,9 @@ function renderMap() {
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            const val = elevation[y][x];
-            ctx.fillStyle = getColor(val);
+            const elev = elevation[y][x];
+            const nutr = nutrition[y][x];
+            ctx.fillStyle = getColor(elev, nutr);
             ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
         }
     }
@@ -179,9 +180,10 @@ canvas.addEventListener('mousemove', (e) => {
     const tileX = Math.floor(x / tileSize);
     const tileY = Math.floor(y / tileSize);
 
-    let val = getTileValue(tileX, tileY);
-    if (val !== null) {
-        setInfoPanelTile(tileX, tileY, val);
+    let elev = getTileElevation(tileX, tileY);
+    let nutr = getTileNutrition(tileX, tileY);
+    if (elev !== null && nutr !== null) {
+        setInfoPanelTile(tileX, tileY, elev, nutr);
     }
 });
 
@@ -189,7 +191,7 @@ canvas.addEventListener('mouseleave', () => {
     clearInfoPanelTile();
 });
 
-function getTileValue(tileX, tileY) {
+function getTileElevation(tileX, tileY) {
     if (tileY >= 0 && tileY < elevation.length && tileX >= 0 && tileX < elevation[0].length) {
         return elevation[tileY][tileX];
     }
@@ -197,4 +199,12 @@ function getTileValue(tileX, tileY) {
     return null;
 }
 
-export { getTileValue }
+function getTileNutrition(tileX, tileY) {
+    if (nutrition && tileY >= 0 && tileY < nutrition.length && tileX >= 0 && tileX < nutrition[0].length) {
+        return nutrition[tileY][tileX];
+    }
+
+    return null;
+}
+
+export { getTileElevation, getTileNutrition }

@@ -1,10 +1,9 @@
 import { getTileTypeName, getColor } from "./tile-type.js";
-import { getTileValue } from "./tilemap.js";
+import { getTileElevation, getTileNutrition } from "./tilemap.js";
 
 let infoOpen = false;
 let tileX = 0;
 let tileY = 0;
-let tileValue = 0.0;
 
 const toggleBtnContainer = document.querySelector('.left-controls');
 const toggleBtn = document.getElementById('infoToggleBtn');
@@ -22,18 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function setInfoPanelTile(x, y, val) {
+function setInfoPanelTile(x, y, elev, nutr) {
     tileX = x;
     tileY = y;
-    tileValue = val;
 
-    const typeName = getTileTypeName(val);
+    const typeName = getTileTypeName(elev);
 
     if (typeElem) typeElem.innerText = typeName;
-    if (valElem) valElem.innerText = `Noise Value: ${val.toFixed(4)}\nCoordinates: (${x}, ${y})`;
+    if (valElem) valElem.innerText = `Elevation: ${elev.toFixed(4)}\nNutrition: ${nutr.toFixed(4)}\nCoordinates: (${x}, ${y})`;
     if (tileDisplay) {
         tileDisplay.style.display = 'block';
-        tileDisplay.style.backgroundColor = getColor(val);
+        tileDisplay.style.backgroundColor = getColor(elev, nutr);
     }
 }
 
@@ -44,10 +42,11 @@ function clearInfoPanelTile() {
 }
 
 function updateInfoPanel() {
-    let val = getTileValue(tileX, tileY);
+    let elev = getTileElevation(tileX, tileY);
+    let nutr = getTileNutrition(tileX, tileY);
 
-    if (val !== null) {
-        setInfoPanelTile(tileX, tileY, val);
+    if (elev !== null && nutr !== null) {
+        setInfoPanelTile(tileX, tileY, elev, nutr);
     }
 }
 
