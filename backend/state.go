@@ -11,6 +11,7 @@ const (
 
 type SimState struct {
 	Tiles TileMap
+	// Blobs []Blob
 }
 
 func NewSim() SimState {

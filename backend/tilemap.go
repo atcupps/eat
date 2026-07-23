@@ -8,9 +8,12 @@ import (
 )
 
 const (
-	MAP_WIDTH  int     = 192
-	MAP_HEIGHT int     = 128
-	MAP_SCALE  float64 = 0.04 // smaller = zoomed in, larger = zoomed out
+	MAP_WIDTH       int     = 192
+	MAP_HEIGHT      int     = 128
+	PIXELS_PER_TILE int     = 20
+	MAP_PIXELS_X    int     = MAP_WIDTH * PIXELS_PER_TILE
+	MAP_PIXELS_Y    int     = MAP_HEIGHT * PIXELS_PER_TILE
+	MAP_SCALE       float64 = 0.04 // smaller = zoomed in, larger = zoomed out
 
 	MIN_ELEVATION float64 = -1.0
 	MAX_ELEVATION float64 = 1.0
@@ -22,7 +25,7 @@ const (
 	HILLS_THRESHOLD                 = 0.75
 
 	MIN_NUTRITION float64 = 0.0
-	MAX_NUTRITION float64 = VEGETATION_THRESHOLD - BEACH_THRESHOLD
+	MAX_NUTRITION float64 = 1.0
 )
 
 type TileType int
@@ -73,7 +76,7 @@ func NewTileMap(seed int64) TileMap {
 		nutrition[y] = make([]float64, MAP_WIDTH)
 		for x := range nutrition[y] {
 			if tileTypeFromElevation(elevation[y][x]) == TileTypeVegetation {
-				nutrition[y][x] = MAX_NUTRITION - elevation[y][x] + BEACH_THRESHOLD
+				nutrition[y][x] = 1.0 - (elevation[y][x]-BEACH_THRESHOLD)/(VEGETATION_THRESHOLD-BEACH_THRESHOLD)
 			} else {
 				nutrition[y][x] = MIN_NUTRITION
 			}

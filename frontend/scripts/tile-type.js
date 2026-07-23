@@ -10,7 +10,7 @@ const VEGETATION_THRESHOLD = 0.65;
 const HILLS_THRESHOLD = 0.75;
 
 const MIN_NUTRITION = 0.0;
-const MAX_NUTRITION = VEGETATION_THRESHOLD - BEACH_THRESHOLD;
+const MAX_NUTRITION = 1.0;
 
 const DEEP_WATER_COLOR = new RGBColor(0, 0, 100);
 const SHALLOW_WATER_START_COLOR = new RGBColor(0, 100, 255);
@@ -23,21 +23,14 @@ const MOUNTAIN_END_COLOR = new RGBColor(220, 220, 220);
 
 function effectiveValue(elevation, nutrition) {
     if (BEACH_THRESHOLD < elevation && elevation < VEGETATION_THRESHOLD) {
-        /**
-         * nutrition is from veg_thresh to beach_thresh
-         * it doesn't go higher than elevation
-         * 
-         * nutrition := max_nutr - elev + beach
-         * 
-         * if the nutrition is undisturbed, then the effective
-         * value should be the same as elevation
-         * so to get back to elevation we go:
-         * elev = max_nutr - nutr + beach
-         * 
-         * if nutrition goes down from its default value,
-         * then elev will increase as expected
-         */
-        return MAX_NUTRITION - nutrition + BEACH_THRESHOLD;
+        // defaultNutrition = 1.0 - (elevation - BEACH_THRESHOLD) / (VEGETATION_THRESHOLD - BEACH_THRESHOLD)
+        // solving for elevation:
+        // n = 1 - (e - b) / (v - b)
+        // n - 1 = - (e - b) / (v - b)
+        // (n - 1) * (v - b) = - e + b
+        // (1 - n) * (v - b) = e - b
+        // (1 - n) * (v - b) + b = e
+        return (1 - nutrition) * (VEGETATION_THRESHOLD - BEACH_THRESHOLD) + BEACH_THRESHOLD;
     }
     return elevation;
 }
