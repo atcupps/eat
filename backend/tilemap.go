@@ -15,7 +15,8 @@ const (
 	MAP_PIXELS_X    int     = MAP_WIDTH * PIXELS_PER_TILE
 	MAP_PIXELS_Y    int     = MAP_HEIGHT * PIXELS_PER_TILE
 	X_SCALE         float64 = 1.3 // smaller = zoomed in, larger = zoomed out
-	Y_SCALE         float64 = float64(MAP_WIDTH) / float64(MAP_HEIGHT) * X_SCALE
+	Y_SCALE         float64 = float64(MAP_HEIGHT) / float64(MAP_WIDTH) * X_SCALE
+	ELEVATION_SCALE float64 = 1.4
 
 	MIN_ELEVATION float64 = -1.0
 	MAX_ELEVATION float64 = 1.0
@@ -72,7 +73,10 @@ func tileableNoise(x, y, width, height float64, noise *opensimplex.Noise) float6
 	nz := math.Cos(angleY) * X_SCALE
 	nw := math.Sin(angleY) * Y_SCALE
 
-	return (*noise).Eval4(nx, ny, nz, nw)
+	noiseVal := (*noise).Eval4(nx, ny, nz, nw)
+	scaled := noiseVal * ELEVATION_SCALE
+	bounded := math.Min(MAX_ELEVATION, math.Max(MIN_ELEVATION, scaled))
+	return bounded
 }
 
 func NewTileMap(seed int64) TileMap {
