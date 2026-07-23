@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/ojrac/opensimplex-go"
@@ -13,7 +14,8 @@ const (
 	PIXELS_PER_TILE int     = 20
 	MAP_PIXELS_X    int     = MAP_WIDTH * PIXELS_PER_TILE
 	MAP_PIXELS_Y    int     = MAP_HEIGHT * PIXELS_PER_TILE
-	MAP_SCALE       float64 = 0.04 // smaller = zoomed in, larger = zoomed out
+	X_SCALE         float64 = 1.3 // smaller = zoomed in, larger = zoomed out
+	Y_SCALE         float64 = float64(MAP_WIDTH) / float64(MAP_HEIGHT) * X_SCALE
 
 	MIN_ELEVATION float64 = -1.0
 	MAX_ELEVATION float64 = 1.0
@@ -61,13 +63,27 @@ type TileMap struct {
 	Lock      sync.RWMutex
 }
 
+func tileableNoise(x, y, width, height float64, noise *opensimplex.Noise) float64 {
+	angleX := (x / width) * 2 * math.Pi
+	angleY := (y / height) * 2 * math.Pi
+
+	nx := math.Cos(angleX) * X_SCALE
+	ny := math.Sin(angleX) * Y_SCALE
+	nz := math.Cos(angleY) * X_SCALE
+	nw := math.Sin(angleY) * Y_SCALE
+
+	return (*noise).Eval4(nx, ny, nz, nw)
+}
+
 func NewTileMap(seed int64) TileMap {
 	noise := opensimplex.New(seed)
 	elevation := make([][]float64, MAP_HEIGHT)
+	width := float64(MAP_WIDTH)
+	height := float64(MAP_HEIGHT)
 	for y := range elevation {
 		elevation[y] = make([]float64, MAP_WIDTH)
 		for x := range elevation[y] {
-			elevation[y][x] = noise.Eval2(float64(x)*MAP_SCALE, float64(y)*MAP_SCALE)
+			elevation[y][x] = tileableNoise(float64(x), float64(y), width, height, &noise)
 		}
 	}
 

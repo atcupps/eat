@@ -1,3 +1,4 @@
+github.com/aldernero/go-noise v0.0.0-20231114043404-4971eada1a14/go.mod h1:AsGgvpaaUWQ53Y1UeNDAQUVjRK9tNn/5zw7FZP0oe/o=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/ojrac/opensimplex-go v1.0.2 h1:l4vs0D+JCakcu5OV0kJ99oEaWJfggSc9jiLpxaWvSzs=
